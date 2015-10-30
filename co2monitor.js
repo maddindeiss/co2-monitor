@@ -1,4 +1,5 @@
-var usb = require('usb');
+var buffer 		= require('buffer');
+var usb 		= require('usb');
 
 var IDVENDOR    =  0x04D9;
 var IDPRODUCT   =  0xA052;
@@ -68,6 +69,35 @@ co2Endpoint.transfer(8, function(err, data) {
 co2Endpoint.startPoll(8, 64);
 
 
+//If there is an error or the process doesn't exit cleanly and release the device,
+//it can be necessary to remove the device and plug it back in between runs. Normally
+//this is not the case but during testing and before getting it working it was
+//necessary to clean up when hitting ctrl-c
+process.on('SIGINT', function() {
+    console.log( "\nco2Device: Gracefully shutting down from SIGINT (Ctrl-C)" );
+
+    try {
+        co2Endpoint.stopPoll();
+    }
+    catch(e)
+    {
+        console.log("co2Device: Some issues stopping stream");
+    }
+
+    co2Interface.release(function(err) {
+        console.log("co2Device: Trying to release interface: " + err);
+    });
+
+    try {
+        co2Device.close();
+    }
+    catch(e)
+    { }
+
+    process.exit( );
+});
+
+
 function decrypt(buf, data) {
     var cstate = [0x48,  0x74,  0x65,  0x6D,  0x70,  0x39,  0x39,  0x65];
     var shuffle = [2, 4, 0, 7, 1, 6, 5, 3];
@@ -100,5 +130,3 @@ function decrypt(buf, data) {
 
     return out;
 }
-
-
