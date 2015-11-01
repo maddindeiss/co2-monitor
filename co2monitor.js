@@ -1,132 +1,202 @@
-var buffer 		= require('buffer');
-var usb 		= require('usb');
+var buffer 	= require('buffer');
+var usb 	= require('usb');
 
-var IDVENDOR    =  0x04D9;
-var IDPRODUCT   =  0xA052;
+var EventEmitter = require('events').EventEmitter;
 
-var co2Device = usb.findByIds(IDVENDOR, IDPRODUCT);
+function Co2Monitor() {
 
-co2Device.open();
+	var co2Device = null;
 
-var buf = new Buffer(8);
-buf.writeUInt8(0xc4,0);
-buf.writeUInt8(0xc6,1);
-buf.writeUInt8(0xc0,2);
-buf.writeUInt8(0x92,3);
-buf.writeUInt8(0x40,4);
-buf.writeUInt8(0x23,5);
-buf.writeUInt8(0xdc,6);
-buf.writeUInt8(0x96,7);
+	var idVendor  = 0x04D9;
+	var idProduct = 0xA052;
 
-co2Device.controlTransfer(0x21,0x09,0x0300,0x00,buf, function(err,data) {
-    if(err)
-        console.log("co2Device: Error in opening control transfer:" + err);
-});
+	var buf = new Buffer(8);
+	buf.writeUInt8(0xc4,0);
+	buf.writeUInt8(0xc6,1);
+	buf.writeUInt8(0xc0,2);
+	buf.writeUInt8(0x92,3);
+	buf.writeUInt8(0x40,4);
+	buf.writeUInt8(0x23,5);
+	buf.writeUInt8(0xdc,6);
+	buf.writeUInt8(0x96,7);
 
-co2Interface = co2Device.interfaces[0];
-co2Interface.claim();
-
-co2Endpoint = co2Interface.endpoints[0];
-
-co2Endpoint.on('data', function(data) {
-    var decrypted = decrypt(buf, data);
-
-    var values = {};
-
-    var op = decrypted[0];
-    values[op] = decrypted[1] << 8 | decrypted[2];
-
-    if (values[80]) {
-        var co2 = values[80];
-        console.log("CO2: " + co2 + " ppm");
-    }
-
-    if (values[66]) {
-        var tmp = (values[66]/16.0-273.15).toFixed(3);
-        console.log("Temp: " + tmp + " C");
-    }
-
-    if (values[68]) {
-        var RH = (values[68]/100);
-        console.log("RH: " + RH);
-    }
-
-});
-
-co2Endpoint.on("error", function(err) {
-    console.log("co2Device: Endpoint error: " + err);
-});
-
-co2Endpoint.on("end",function() {
-    console.log("co2Device: Endpoint stream ending");
-});
-
-co2Endpoint.transfer(8, function(err, data) {
-    if(err)
-        console.log("co2Device: Endpoint transfer error: " + err);
-});
-
-co2Endpoint.startPoll(8, 64);
+	var emitter = new EventEmitter();
 
 
-//If there is an error or the process doesn't exit cleanly and release the device,
-//it can be necessary to remove the device and plug it back in between runs. Normally
-//this is not the case but during testing and before getting it working it was
-//necessary to clean up when hitting ctrl-c
-process.on('SIGINT', function() {
-    console.log( "\nco2Device: Gracefully shutting down from SIGINT (Ctrl-C)" );
+	function setVidPid(vid, pid) {
+		idVendor = vid;
+		idProduct = pid;
+	}
 
-    try {
-        co2Endpoint.stopPoll();
-    }
-    catch(e)
+	function getVidPid() {
+		return {vid: idVendor, pid: idProduct};
+	}
+
+	function connectToDevice() {
+
+		co2Device = usb.findByIds(idVendor, idProduct);
+
+		if(!co2Device) {
+			throw new Error('Device not found!');
+		}
+
+		try {
+			co2Device.open();
+
+			co2Device.controlTransfer(0x21,0x09,0x0300,0x00,buf, function(err,data) {
+			    if(err)
+			        console.log("Error in opening control transfer:" + err);
+			});
+
+			if(!co2Device.interfaces[0]) {
+				throw new Error('Interface not found on Device!');
+			}
+			co2Interface = co2Device.interfaces[0];
+			co2Interface.claim();
+
+			co2Endpoint = co2Interface.endpoints[0];
+
+			emitter.emit("connected");
+
+		} catch (e) {
+			throw new Error('Error while connecting to device! ' + e);
+		}
+	}
+
+	function startTransfer() {
+
+		_startPoll(co2Endpoint, function(cb) {
+			
+			if(cb) {
+				co2Endpoint.on('data', function(data) {
+				    
+					emitter.emit("rawData", data);
+
+				    var decrypted = _decrypt(buf, data);
+				    var values = {};
+
+				    var op = decrypted[0];
+				    values[op] = decrypted[1] << 8 | decrypted[2];
+
+				    if (values[80]) {
+				        var co2 = values[80];
+				        console.log("uii");
+				        emitter.emit("co2", co2);
+				    }
+
+				    if (values[66]) {
+				        var tmp = (values[66]/16.0-273.15).toFixed(3);
+				        emitter.emit("temp", tmp);
+				    }
+
+				    if (values[68]) {
+				        var RH = (values[68]/100);
+				        console.log("RH: " + RH);
+				    }
+				});
+
+				co2Endpoint.on("error", function(err) {
+				    console.log("Endpoint error: " + err);
+				    emitter.emit("error", err);
+				});
+
+				co2Endpoint.on("end",function() {
+				    console.log("Endpoint stream ending");
+				});
+			}
+			else {
+				throw new Error('Error on polling the endpoint!');
+			}
+		});
+	}
+
+	function getEmitter()
     {
-        console.log("co2Device: Some issues stopping stream");
+         return emitter;
     }
 
-    co2Interface.release(function(err) {
-        console.log("co2Device: Trying to release interface: " + err);
-    });
+	function _startPoll(endpoint, callback) {
 
-    try {
-        co2Device.close();
-    }
-    catch(e)
-    { }
+		try{
+			endpoint.transfer(8, function(err, data) {
+			    if(err)
+			    	throw new Error('Endpoint transfer error: ' + err);
+			});
 
-    process.exit( );
-});
+			endpoint.startPoll(8, 64);
+
+			callback(true);
+
+		} catch(e) {
+			callback(false);
+		}
+	}
 
 
-function decrypt(buf, data) {
-    var cstate = [0x48,  0x74,  0x65,  0x6D,  0x70,  0x39,  0x39,  0x65];
-    var shuffle = [2, 4, 0, 7, 1, 6, 5, 3];
-    var i;
+	function _decrypt(buf, data) {
+	    var cstate = [0x48,  0x74,  0x65,  0x6D,  0x70,  0x39,  0x39,  0x65];
+	    var shuffle = [2, 4, 0, 7, 1, 6, 5, 3];
+	    var i;
 
-    var phase1 = [];
-    for(i = 0; i < shuffle.length; i++) {
-        phase1[shuffle[i]] = data[i];
-    }
+	    var phase1 = [];
+	    for(i = 0; i < shuffle.length; i++) {
+	        phase1[shuffle[i]] = data[i];
+	    }
 
-    var phase2 = [];
-    for(i = 0; i < 8; i++) {
-        phase2[i] = phase1[i] ^ buf[i];
-    }
+	    var phase2 = [];
+	    for(i = 0; i < 8; i++) {
+	        phase2[i] = phase1[i] ^ buf[i];
+	    }
 
-    var phase3 = [];
-    for(i = 0; i < 8; i++) {
-        phase3[i] =  ((phase2[i] >> 3) | (phase2[ (i-1+8)%8 ] << 5) ) & 0xff;
-    }
+	    var phase3 = [];
+	    for(i = 0; i < 8; i++) {
+	        phase3[i] =  ((phase2[i] >> 3) | (phase2[ (i-1+8)%8 ] << 5) ) & 0xff;
+	    }
 
-    var ctmp = [];
-    for(i = 0; i < 8; i++) {
-        ctmp[i] = ( (cstate[i] >> 4) | (cstate[i]<<4) ) & 0xff;
-    }
+	    var ctmp = [];
+	    for(i = 0; i < 8; i++) {
+	        ctmp[i] = ( (cstate[i] >> 4) | (cstate[i]<<4) ) & 0xff;
+	    }
 
-    var out = [];
-    for(i = 0; i < 8 ; i++) {
-        out[i] = ((0x100 + phase3[i] - ctmp[i]) & 0xff);
-    }
+	    var out = [];
+	    for(i = 0; i < 8 ; i++) {
+	        out[i] = ((0x100 + phase3[i] - ctmp[i]) & 0xff);
+	    }
 
-    return out;
+	    return out;
+	}
+
+	process.on('SIGINT', function() {
+	    console.log( "\nGracefully shutting down from SIGINT (Ctrl-C)" );
+
+	    try {
+	        co2Endpoint.stopPoll();
+	    }
+	    catch(e) {
+	        console.log("Some issues stopping stream");
+	    }
+
+	    co2Interface.release(function(err) {
+	        console.log("Trying to release interface: " + err);
+	    });
+
+	    try {
+	        co2Device.close();
+	    }
+	    catch(e) { 
+	    }
+
+	    process.exit( );
+	});
+
+	return {
+		setVidPid: 		setVidPid,
+		getVidPid: 		getVidPid,
+		connect: 		connectToDevice,
+		startTransfer: 	startTransfer,
+		data: 			getEmitter
+	};
+
 }
+
+module.exports = Co2Monitor();

@@ -6,7 +6,7 @@
   "engines": { 
   	"node": ">=0.12.x" 
   },
-  "main": "./co2monitor",
+  "main": "./co2monitor.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/maddindeiss/co2monitor.git"
