@@ -80,7 +80,6 @@ function Co2Monitor() {
 
 				    if (values[80]) {
 				        var co2 = values[80];
-				        console.log("uii");
 				        emitter.emit("co2", co2);
 				    }
 
@@ -91,7 +90,6 @@ function Co2Monitor() {
 
 				    if (values[68]) {
 				        var RH = (values[68]/100);
-				        console.log("RH: " + RH);
 				    }
 				});
 
@@ -110,10 +108,9 @@ function Co2Monitor() {
 		});
 	}
 
-	function getEmitter()
-    {
+	function getEmitter() {
          return emitter;
-    }
+  }
 
 	function _startPoll(endpoint, callback) {
 
