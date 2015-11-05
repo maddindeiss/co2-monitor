@@ -5,7 +5,9 @@ var EventEmitter = require('events').EventEmitter;
 
 function Co2Monitor() {
 
-	var co2Device = null;
+	var co2Device    = null;
+	var co2Interface = null;
+	var co2Endpoint  = null;
 
 	var idVendor  = 0x04D9;
 	var idProduct = 0xA052;
@@ -21,7 +23,6 @@ function Co2Monitor() {
 	buf.writeUInt8(0x96,7);
 
 	var emitter = new EventEmitter();
-
 
 	function setVidPid(vid, pid) {
 		idVendor = vid;
@@ -44,20 +45,20 @@ function Co2Monitor() {
 			co2Device.open();
 
 			co2Device.controlTransfer(0x21,0x09,0x0300,0x00,buf, function(err,data) {
-			    if(err)
-			        console.log("Error in opening control transfer:" + err);
+				if(err) console.log("Error in opening control transfer:" + err);
 			});
 
 			if(!co2Device.interfaces[0]) {
 				throw new Error('Interface not found on Device!');
 			}
-			co2Interface = co2Device.interfaces[0];
-			co2Interface.claim();
+			else {
+				co2Interface = co2Device.interfaces[0];
+				co2Interface.claim();
 
-			co2Endpoint = co2Interface.endpoints[0];
+				co2Endpoint = co2Interface.endpoints[0];
 
-			emitter.emit("connected");
-
+				emitter.emit("connected");
+			}
 		} catch (e) {
 			throw new Error('Error while connecting to device! ' + e);
 		}
@@ -66,40 +67,40 @@ function Co2Monitor() {
 	function startTransfer() {
 
 		_startPoll(co2Endpoint, function(cb) {
-			
+
 			if(cb) {
 				co2Endpoint.on('data', function(data) {
-				    
+
 					emitter.emit("rawData", data);
 
-				    var decrypted = _decrypt(buf, data);
-				    var values = {};
+					var decrypted = _decrypt(buf, data);
+					var values = {};
 
-				    var op = decrypted[0];
-				    values[op] = decrypted[1] << 8 | decrypted[2];
+					var op = decrypted[0];
+					values[op] = decrypted[1] << 8 | decrypted[2];
 
-				    if (values[80]) {
-				        var co2 = values[80];
-				        emitter.emit("co2", co2);
-				    }
+					if (values[80]) {
+						var co2 = values[80];
+						emitter.emit("co2", co2);
+					}
 
-				    if (values[66]) {
-				        var tmp = (values[66]/16.0-273.15).toFixed(3);
-				        emitter.emit("temp", tmp);
-				    }
+					if (values[66]) {
+						var tmp = (values[66]/16.0-273.15).toFixed(3);
+						emitter.emit("temp", tmp);
+					}
 
-				    if (values[68]) {
-				        var RH = (values[68]/100);
-				    }
+					if (values[68]) {
+						var RH = (values[68]/100);
+					}
 				});
 
 				co2Endpoint.on("error", function(err) {
-				    console.log("Endpoint error: " + err);
-				    emitter.emit("error", err);
+					console.log("Endpoint error: " + err);
+					emitter.emit("error", err);
 				});
 
 				co2Endpoint.on("end",function() {
-				    console.log("Endpoint stream ending");
+					console.log("Endpoint stream ending");
 				});
 			}
 			else {
@@ -109,15 +110,13 @@ function Co2Monitor() {
 	}
 
 	function getEmitter() {
-         return emitter;
-  }
+		return emitter;
+	}
 
 	function _startPoll(endpoint, callback) {
-
 		try{
 			endpoint.transfer(8, function(err, data) {
-			    if(err)
-			    	throw new Error('Endpoint transfer error: ' + err);
+				if(err) throw new Error('Endpoint transfer error: ' + err);
 			});
 
 			endpoint.startPoll(8, 64);
@@ -131,59 +130,59 @@ function Co2Monitor() {
 
 
 	function _decrypt(buf, data) {
-	    var cstate = [0x48,  0x74,  0x65,  0x6D,  0x70,  0x39,  0x39,  0x65];
-	    var shuffle = [2, 4, 0, 7, 1, 6, 5, 3];
-	    var i;
+		var cstate = [0x48,  0x74,  0x65,  0x6D,  0x70,  0x39,  0x39,  0x65];
+		var shuffle = [2, 4, 0, 7, 1, 6, 5, 3];
+		var i;
 
-	    var phase1 = [];
-	    for(i = 0; i < shuffle.length; i++) {
-	        phase1[shuffle[i]] = data[i];
-	    }
+		var phase1 = [];
+		for(i = 0; i < shuffle.length; i++) {
+			phase1[shuffle[i]] = data[i];
+		}
 
-	    var phase2 = [];
-	    for(i = 0; i < 8; i++) {
-	        phase2[i] = phase1[i] ^ buf[i];
-	    }
+		var phase2 = [];
+		for(i = 0; i < 8; i++) {
+			phase2[i] = phase1[i] ^ buf[i];
+		}
 
-	    var phase3 = [];
-	    for(i = 0; i < 8; i++) {
-	        phase3[i] =  ((phase2[i] >> 3) | (phase2[ (i-1+8)%8 ] << 5) ) & 0xff;
-	    }
+		var phase3 = [];
+		for(i = 0; i < 8; i++) {
+			phase3[i] =  ((phase2[i] >> 3) | (phase2[ (i-1+8)%8 ] << 5) ) & 0xff;
+		}
 
-	    var ctmp = [];
-	    for(i = 0; i < 8; i++) {
-	        ctmp[i] = ( (cstate[i] >> 4) | (cstate[i]<<4) ) & 0xff;
-	    }
+		var ctmp = [];
+		for(i = 0; i < 8; i++) {
+			ctmp[i] = ( (cstate[i] >> 4) | (cstate[i]<<4) ) & 0xff;
+		}
 
-	    var out = [];
-	    for(i = 0; i < 8 ; i++) {
-	        out[i] = ((0x100 + phase3[i] - ctmp[i]) & 0xff);
-	    }
+		var out = [];
+		for(i = 0; i < 8 ; i++) {
+			out[i] = ((0x100 + phase3[i] - ctmp[i]) & 0xff);
+		}
 
-	    return out;
+		return out;
 	}
 
 	process.on('SIGINT', function() {
-	    console.log( "\nGracefully shutting down from SIGINT (Ctrl-C)" );
+		console.log( "\nGracefully shutting down from SIGINT (Ctrl-C)" );
 
-	    try {
-	        co2Endpoint.stopPoll();
-	    }
-	    catch(e) {
-	        console.log("Some issues stopping stream");
-	    }
+		try {
+			co2Endpoint.stopPoll();
+		}
+		catch(e) {
+			console.log("Some issues stopping stream");
+		}
 
-	    co2Interface.release(function(err) {
-	        console.log("Trying to release interface: " + err);
-	    });
+		co2Interface.release(function(err) {
+			console.log("Trying to release interface: " + err);
+		});
 
-	    try {
-	        co2Device.close();
-	    }
-	    catch(e) { 
-	    }
+		try {
+			co2Device.close();
+		}
+		catch(e) {
+		}
 
-	    process.exit( );
+		process.exit( );
 	});
 
 	return {
