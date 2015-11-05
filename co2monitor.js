@@ -4,7 +4,6 @@ var usb 	= require('usb');
 var EventEmitter = require('events').EventEmitter;
 
 function Co2Monitor() {
-
 	var co2Device    = null;
 	var co2Interface = null;
 	var co2Endpoint  = null;
@@ -34,7 +33,6 @@ function Co2Monitor() {
 	}
 
 	function connectToDevice() {
-
 		co2Device = usb.findByIds(idVendor, idProduct);
 
 		if(!co2Device) {
@@ -65,9 +63,8 @@ function Co2Monitor() {
 	}
 
 	function startTransfer() {
-
 		_startPoll(co2Endpoint, function(cb) {
-
+			
 			if(cb) {
 				co2Endpoint.on('data', function(data) {
 
