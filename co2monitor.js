@@ -1,3 +1,5 @@
+var os 		= require('os');
+
 var buffer 	= require('buffer');
 var usb 	= require('usb');
 
@@ -44,21 +46,27 @@ function Co2Monitor() {
 		try {
 			co2Device.open();
 
-			co2Device.controlTransfer(0x21,0x09,0x0300,0x00,buf, function(err,data) {
-				if(err) console.log("Error in opening control transfer:" + err);
-			});
-
 			if(!co2Device.interfaces[0]) {
 				throw new Error('Interface not found on Device!');
 			}
 			else {
 				co2Interface = co2Device.interfaces[0];
+
+				if(os.platform() === 'linux') {
+					if(co2Interface.isKernelDriverActive()) {
+						co2Interface.detachKernelDriver();
+					}
+				}
+
+				co2Device.controlTransfer(0x21,0x09,0x0300,0x00,buf, function(err, data) {
+					if(err) console.log("Error in opening control transfer:" + err);
+				});
+
 				co2Interface.claim();
-
 				co2Endpoint = co2Interface.endpoints[0];
-
 				emitter.emit("connected");
 			}
+
 		} catch (e) {
 			throw new Error('Error while connecting to device! ' + e);
 		}
@@ -79,17 +87,17 @@ function Co2Monitor() {
 					var op = decrypted[0];
 					values[op] = decrypted[1] << 8 | decrypted[2];
 
-					if (values[80]) {
+					if(values[80]) {
 						var co2 = values[80];
 						emitter.emit("co2", co2);
 					}
 
-					if (values[66]) {
+					if(values[66]) {
 						var tmp = (values[66]/16.0-273.15).toFixed(3);
 						emitter.emit("temp", tmp);
 					}
 
-					if (values[68]) {
+					if(values[68]) {
 						var RH = (values[68]/100);
 					}
 				});
