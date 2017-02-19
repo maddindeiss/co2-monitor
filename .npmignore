@@ -4,4 +4,3 @@ node_modules
 *.js
 *.txt
 !co2-monitor.js
-!example.js

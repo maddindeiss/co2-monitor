@@ -17,12 +17,12 @@ co2Monitor.on('error', (error) => {
     console.error(error);
 })
 
-co2Monitor.on('co2', (data) => {
-    console.log('co2: ' + data);
+co2Monitor.on('co2', (co2) => {
+    console.log('co2: ' + co2);
 })
 
-co2Monitor.on('temp', (data) => {
-    console.log('temp: ' + data);
+co2Monitor.on('temp', (temp) => {
+    console.log('temp: ' + temp);
 })
 
 co2Monitor.on('data', (data) => {

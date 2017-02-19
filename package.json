@@ -1,12 +1,21 @@
 {
-  "name": "co2monitor",
+  "name": "co2-monitor",
   "description": "Measure CO2 and temperature in nodejs with the TFA-Dostmann AirControl Mini",
+  "keywords": [
+    "co2",
+    "temperature",
+    "co2monitor",
+    "co2-monitor",
+    "TFA-Dostmann",
+    "TFA-Dostmann AirControl Mini"
+  ],
   "version": "2.0.0",
   "author": "Martin Deiss",
+  "license": "MIT License",
   "engines": { 
   	"node": ">=6.x" 
   },
-  "main": "./co2monitor",
+  "main": "./co2-monitor",
   "repository": {
     "type": "git",
     "url": "https://github.com/maddindeiss/co2monitor.git"

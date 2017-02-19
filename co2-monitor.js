@@ -1,7 +1,7 @@
-const os 		= require('os');
-const buffer 	= require('buffer');
-const util 		= require('util');
-const usb 		= require('usb');
+const os		= require('os');
+const buffer	= require('buffer');
+const util		= require('util');
+const usb		= require('usb');
 
 const EventEmitter = require('events').EventEmitter;
 
