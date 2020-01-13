@@ -1,4 +1,4 @@
-const Co2Monitor = require('./co2monitor');
+const Co2Monitor = require('./co2-monitor');
 
 let co2Monitor = new Co2Monitor();
 

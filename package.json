@@ -7,13 +7,15 @@
     "co2monitor",
     "co2-monitor",
     "TFA-Dostmann",
-    "TFA-Dostmann AirControl Mini"
+    "TFA-Dostmann AirControl Mini",
+    "iot",
+    "smart home"
   ],
-  "version": "2.0.0",
+  "version": "2.0.1",
   "author": "Martin Deiss",
   "license": "MIT License",
-  "engines": { 
-  	"node": ">=6.x" 
+  "engines": {
+    "node": ">=6.x"
   },
   "main": "./co2-monitor",
   "repository": {
@@ -21,6 +23,6 @@
     "url": "https://github.com/maddindeiss/co2monitor.git"
   },
   "dependencies": {
-    "usb": "~1.2.0"
+    "usb": "~1.6.2"
   }
 }
