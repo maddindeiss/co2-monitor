@@ -1,39 +1,60 @@
 # co2monitor
 
-## hardware
-[TFA-Dostmann AirControl Mini CO2 Messgerät](http://www.amazon.de/dp/B00TH3OW4Q)
+Reads the CO2 level and temperature from the [TFA-Dostmann CO2-Monitor AIRCO2NTROL MINI](https://www.tfa-dostmann.de/produkt/co2-monitor-airco2ntrol-mini-31-5006/) via USB.
 
-## example
+Just connect the sensor via USB and run the example script. There is no need to set up the sensor or USB port.
+
+## Hardware
+[TFA-Dostmann CO2-Monitor AIRCO2NTROL MINI 31.5006](https://www.tfa-dostmann.de/produkt/co2-monitor-airco2ntrol-mini-31-5006/)
+
+## Install
+``npm install co2-monitor``
+
+## Example
 ```javascript
 const Co2Monitor = require('./co2monitor');
 
 let co2Monitor = new Co2Monitor();
 
 co2Monitor.on('connected', (device) => {
-    co2Monitor.startTransfer();
+  console.log('Co2Monitor connected');
+});
+
+co2Monitor.on('disconnected', () => {
+  console.log('Co2Monitor disconnected');
 });
 
 co2Monitor.on('error', (error) => {
-    console.error(error);
+  console.error(error);
+
+  co2Monitor.disconnect(() => {
+    process.exit(1);
+  });
 })
 
 co2Monitor.on('co2', (co2) => {
-    console.log('co2: ' + co2);
+  console.log('co2: ' + co2);
 })
 
 co2Monitor.on('temp', (temp) => {
-    console.log('temp: ' + temp);
+  console.log('temp: ' + temp);
 })
 
 co2Monitor.on('data', (data) => {
-    console.log('data: ' + data);
+  console.log('data: ' + data);
 })
 
 co2Monitor.on('rawData', (rawData) => {
-    console.log(rawData);
+  console.log(rawData);
 })
 
-co2Monitor.connect();
+co2Monitor.connect(error => {
+  if (error) {
+    console.error(error);
+  }
+
+  co2Monitor.startTransfer();
+});
 
 ```
 
