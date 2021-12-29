@@ -8,7 +8,7 @@ Just connect the sensor via USB and run the example script. There is no need to 
 [TFA-Dostmann CO2-Monitor AIRCO2NTROL MINI 31.5006](https://www.tfa-dostmann.de/produkt/co2-monitor-airco2ntrol-mini-31-5006/)
 
 ## Install
-``npm install co2monitor``
+``npm install co2-monitor``
 
 ## Example
 ```javascript
