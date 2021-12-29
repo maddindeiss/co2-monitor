@@ -41,7 +41,12 @@ class Co2Monitor extends EventEmitter {
     return this.idProduct;
   }
 
-  connect(callback) {
+  connect() {
+    this._connect(() => {});
+  }
+
+  // Just a wrapper for connect() to not break the API
+  _connect(callback) {
     this.co2Device = usb.findByIds(this.idVendor, this.idProduct);
 
     if (!this.co2Device) {
@@ -88,6 +93,10 @@ class Co2Monitor extends EventEmitter {
 
   disconnect(callback) {
     try {
+      if(!this.co2Endpoint) {
+        return callback();
+      }
+
       this.co2Endpoint.stopPoll(() => {
 
         if (os.platform() === 'linux') {

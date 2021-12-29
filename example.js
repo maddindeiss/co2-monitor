@@ -3,6 +3,8 @@ const Co2Monitor = require('./co2-monitor');
 let co2Monitor = new Co2Monitor();
 
 co2Monitor.on('connected', (device) => {
+  co2Monitor.startTransfer();
+
   console.log('Co2Monitor connected');
 });
 
@@ -34,10 +36,4 @@ co2Monitor.on('rawData', (rawData) => {
   console.log(rawData);
 })
 
-co2Monitor.connect(error => {
-  if (error) {
-    console.error(error);
-  }
-
-  co2Monitor.startTransfer();
-});
+co2Monitor.connect();
