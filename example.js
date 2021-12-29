@@ -12,6 +12,10 @@ co2Monitor.on('disconnected', () => {
 
 co2Monitor.on('error', (error) => {
   console.error(error);
+
+  co2Monitor.disconnect(() => {
+    process.exit(1);
+  });
 })
 
 co2Monitor.on('co2', (co2) => {
@@ -24,12 +28,6 @@ co2Monitor.on('temp', (temp) => {
 
 co2Monitor.on('data', (data) => {
   console.log('data: ' + data);
-
-  co2Monitor.disconnect(error => {
-    if (error) {
-      console.error(error);
-    }
-  });
 })
 
 co2Monitor.on('rawData', (rawData) => {
