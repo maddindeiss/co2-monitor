@@ -23,6 +23,6 @@
     "url": "https://github.com/maddindeiss/co2monitor.git"
   },
   "dependencies": {
-    "usb": "~1.6.2"
+    "usb": "~2.0.3"
   }
 }
