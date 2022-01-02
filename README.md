@@ -1,4 +1,4 @@
-# co2monitor
+# co2-monitor
 
 Reads the CO2 level and temperature from the [TFA-Dostmann CO2-Monitor AIRCO2NTROL MINI](https://www.tfa-dostmann.de/produkt/co2-monitor-airco2ntrol-mini-31-5006/) via USB.
 
@@ -54,8 +54,8 @@ co2Monitor.connect();
 
 ```
 
-## credits
+## Credits
 based on code by [henryk ploetz](https://hackaday.io/project/5301-reverse-engineering-a-low-cost-usb-co-monitor/log/17909-all-your-base-are-belong-to-us)
 
-## license
+## License
 [MIT](http://opensource.org/licenses/MIT)
