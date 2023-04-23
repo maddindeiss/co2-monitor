@@ -1,11 +1,13 @@
-# co2monitor
+# co2-monitor
 
-Reads the CO2 level and temperature from the [TFA-Dostmann CO2-Monitor AIRCO2NTROL MINI](https://www.tfa-dostmann.de/produkt/co2-monitor-airco2ntrol-mini-31-5006/) via USB.
+Reads CO2, temperature and humidity from [TFA-Dostmann](https://www.tfa-dostmann.de/en/produkte/co2-measuring-instruments/) CO2-Monitor devices via USB.
 
 Just connect the sensor via USB and run the example script. There is no need to set up the sensor or USB port.
 
-## Hardware
-[TFA-Dostmann CO2-Monitor AIRCO2NTROL MINI 31.5006](https://www.tfa-dostmann.de/produkt/co2-monitor-airco2ntrol-mini-31-5006/)
+## Supported Hardware
+[TFA-Dostmann CO2-Monitor AIRCO2NTROL MINI 31.5006](https://www.tfa-dostmann.de/en/product/co2-monitor-airco2ntrol-mini-31-5006/)
+
+[TFA-Dostmann CO2-Monitor AIRCO2NTROL COACH 31.5009](https://www.tfa-dostmann.de/en/product/co2-monitor-airco2ntrol-coach-31-5009/)
 
 ## Install
 ``npm install co2-monitor``
@@ -16,9 +18,7 @@ const Co2Monitor = require('co2-monitor');
 
 let co2Monitor = new Co2Monitor();
 
-co2Monitor.on('connected', (device) => {
-  co2Monitor.startTransfer();
-
+co2Monitor.on('connected', () => {
   console.log('Co2Monitor connected');
 });
 
@@ -35,27 +35,105 @@ co2Monitor.on('error', (error) => {
 })
 
 co2Monitor.on('co2', (co2) => {
-  console.log('co2: ' + co2);
+  console.log('co2: ' + co2.toString());
 })
 
-co2Monitor.on('temp', (temp) => {
-  console.log('temp: ' + temp);
+co2Monitor.on('humidity', (humidity) => {
+  console.log('humidity: ' + humidity.toString());
+})
+
+co2Monitor.on('temperature', (temperature) => {
+  console.log('temperature: ' + temperature.toString());
 })
 
 co2Monitor.on('data', (data) => {
-  console.log('data: ' + data);
+  console.log('data: ' + data.toString());
 })
 
-co2Monitor.on('rawData', (rawData) => {
-  console.log(rawData);
-})
+co2Monitor.connect((error) => {
+  if (error) {
+    console.error(error);
+    process.exit(1);
+  }
 
-co2Monitor.connect();
-
+  co2Monitor.startTransfer((error) => {
+    if (error) {
+      console.error(error);
+    }
+  });
+});
 ```
 
-## credits
+## Events
+### Temperature
+``temperature`` event which is triggered on an update of temperature.
+
+The event result is an object with the following structure:
+```json
+{
+  "value": 23.73,
+  "type": "float",
+  "unit": "degree celsius",
+  "symbol": "°C"
+}
+```
+
+### Co2
+``co2`` event which is triggered on an update of Co2.
+
+The event result is an object with the following structure:
+```json
+{
+  "value": 1744,
+  "type": "int",
+  "unit": "parts per million",
+  "symbol": "ppm"
+}
+```
+
+### Humidity
+``humidity`` event which is triggered on an update of relative humidity.
+> Only the AIRCO2NTROL COACH supports humidity data. The AIRCO2NTROL MINI will report humidity data with 0.
+
+The event result is an object with the following structure:
+```json
+{
+  "value": 40.75,
+  "type": "float",
+  "unit": "relative humidity",
+  "symbol": "% rh"
+}
+```
+
+### Data
+``data`` event which is triggered on updates of humidity, temperature or co2.
+
+The event result is an object with the following structure:
+```json
+{
+  "co2": {
+    "value": 1744,
+    "type": "int",
+    "unit": "parts per million",
+    "symbol": "ppm"
+  },
+  "temperature": {
+    "value": 23.73,
+    "type": "float",
+    "unit": "degree celsius",
+    "symbol": "°C"
+  },
+  "humidity": {
+    "value": 40.75,
+    "type": "float",
+    "unit": "relative humidity",
+    "symbol": "% rh"
+  }
+}
+```
+
+## Credits
 based on code by [henryk ploetz](https://hackaday.io/project/5301-reverse-engineering-a-low-cost-usb-co-monitor/log/17909-all-your-base-are-belong-to-us)
 
-## license
+## License
 [MIT](http://opensource.org/licenses/MIT)
