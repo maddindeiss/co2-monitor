@@ -1,21 +1,23 @@
 {
   "name": "co2-monitor",
-  "description": "Measure CO2 and temperature in nodejs with the TFA-Dostmann AirControl Mini",
+  "description": "Measure CO2, temperature and humidity in nodejs with the TFA-Dostmann AirControl Mini / Coach",
   "keywords": [
     "co2",
     "temperature",
+    "humidity",
     "co2monitor",
     "co2-monitor",
     "TFA-Dostmann",
     "TFA-Dostmann AirControl Mini",
+    "TFA-Dostmann AirControl Coach",
     "iot",
     "smart home"
   ],
-  "version": "2.1.0",
+  "version": "3.0.0",
   "author": "Martin Deiss",
   "license": "MIT License",
   "engines": {
-    "node": ">=10.16.0"
+    "node": ">=10.20.0"
   },
   "main": "./co2-monitor",
   "repository": {
@@ -23,7 +25,7 @@
     "url": "https://github.com/maddindeiss/co2monitor.git"
   },
   "dependencies": {
-    "usb": "~2.0.3"
+    "usb": "2.1.3"
   },
   "os": [
     "linux",

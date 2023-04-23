@@ -103,14 +103,13 @@ class Co2Monitor extends EventEmitter {
       }
 
       this.co2Endpoint.stopPoll(() => {
-
-        if (os.platform() === 'linux') {
-          this.co2Interface.attachKernelDriver();
-        }
-
         this.co2Interface.release(true, (error) => {
           if (error) {
             this.emitError(error);
+          }
+
+          if (os.platform() === 'linux') {
+            this.co2Interface.attachKernelDriver();
           }
 
           this.co2Device.close();
@@ -279,7 +278,8 @@ class TemperatureResponse {
   constructor(temperature) {
     this.value = parseFloat((temperature / 16.0 - 273.15).toFixed(2));
     this.type = "float";
-    this.unit = "°C";
+    this.unit = "degree celsius";
+    this.symbol = "°C";
   }
 
   toString() {
@@ -291,7 +291,8 @@ class HumidityResponse {
   constructor(humidity) {
     this.value = parseFloat((humidity / 100).toFixed(2));
     this.type = "float";
-    this.unit = "% rh";
+    this.unit = "relative humidity";
+    this.symbol = "% rh";
   }
 
   toString() {
@@ -303,7 +304,8 @@ class Co2Response {
   constructor(co2) {
     this.value = co2;
     this.type = "int";
-    this.unit = "ppm";
+    this.unit = "parts per million";
+    this.symbol = "ppm";
   }
 
   toString() {

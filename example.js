@@ -43,10 +43,6 @@ co2Monitor.connect((error) => {
   co2Monitor.startTransfer((error) => {
     if (error) {
       console.error(error);
-
-      co2Monitor.disconnect(() => {
-        process.exit(1);
-      });
     }
   });
 });
